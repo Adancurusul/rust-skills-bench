@@ -1,4 +1,12 @@
 node_modules/
 results/
+bench.config.json
 .DS_Store
 *.log
+
+# Aragorn/workflow state is intentionally local-only.
+doc/
+.aragorn/
+workflow/
+.workflow/
+*.aragorn.json

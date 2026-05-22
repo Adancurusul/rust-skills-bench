@@ -18,9 +18,24 @@ function argValue(name, fallback = null) {
   return value;
 }
 
+function loadConfig() {
+  const configPath = path.resolve(argValue(
+    "--config",
+    process.env.RUST_SKILLS_BENCH_CONFIG || path.join(root, "bench.config.json")
+  ));
+  if (!fs.existsSync(configPath)) return {};
+  return JSON.parse(fs.readFileSync(configPath, "utf8"));
+}
+
+function csvConfig(value, fallback) {
+  if (Array.isArray(value)) return value.join(",");
+  return value || fallback;
+}
+
+const config = loadConfig();
 const subjectRoot = path.resolve(argValue(
   "--subject-root",
-  process.env.RUST_SKILLS_SUBJECT_ROOT || path.resolve(root, "..", "rust-skills")
+  process.env.RUST_SKILLS_SUBJECT_ROOT || config.subjectRoot || path.resolve(root, "..", "rust-skills")
 ));
 const { routePrompt } = require(path.join(subjectRoot, "lib", "routing.js"));
 
@@ -619,17 +634,17 @@ async function runQueue(tasks, concurrency) {
 
 const casesPath = path.resolve(argValue(
   "--cases",
-  path.join(root, "fixtures", "agent-matrix-comprehensive.json")
+  config.cases || path.join(root, "fixtures", "agent-matrix-comprehensive.json")
 ));
-const engines = splitCsv(argValue("--engines", "codex,claude-code"));
-const profiles = splitCsv(argValue("--profiles", "baseline,rust-skills"));
-const repeats = Number.parseInt(argValue("--repeats", "1"), 10);
-const concurrency = Number.parseInt(argValue("--concurrency", "1"), 10);
-const timeoutMs = Number.parseInt(argValue("--timeout-ms", "300000"), 10);
-const maxSkillContextChars = Number.parseInt(argValue("--max-skill-context-chars", "6000"), 10);
-const allowRealAgents = hasFlag("--allow-real-agents") || process.env.RUN_REAL_AGENTS === "1";
+const engines = splitCsv(argValue("--engines", csvConfig(config.engines, "codex,claude-code")));
+const profiles = splitCsv(argValue("--profiles", csvConfig(config.profiles, "baseline,rust-skills")));
+const repeats = Number.parseInt(argValue("--repeats", String(config.repeats || 1)), 10);
+const concurrency = Number.parseInt(argValue("--concurrency", String(config.concurrency || 1)), 10);
+const timeoutMs = Number.parseInt(argValue("--timeout-ms", String(config.timeoutMs || 300000)), 10);
+const maxSkillContextChars = Number.parseInt(argValue("--max-skill-context-chars", String(config.maxSkillContextChars || 6000)), 10);
+const allowRealAgents = hasFlag("--allow-real-agents") || process.env.RUN_REAL_AGENTS === "1" || config.allowRealAgents === true;
 const requireRealAgents = hasFlag("--require-real-agents");
-const benchmarkMode = hasFlag("--benchmark-mode");
+const benchmarkMode = hasFlag("--benchmark-mode") || config.benchmarkMode === true;
 const codexIgnoreUserConfig = !hasFlag("--codex-use-user-config");
 const codexIgnoreRules = !hasFlag("--codex-use-rules");
 const caseFilter = argValue("--case-filter", null);
@@ -643,7 +658,7 @@ const runId = argValue(
 );
 const runRoot = path.resolve(argValue(
   "--run-root",
-  path.join(root, "results", "agent-matrix", runId)
+  path.join(root, config.resultsDir || "results", "agent-matrix", runId)
 ));
 const reportPath = path.resolve(argValue(
   "--report",

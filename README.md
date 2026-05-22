@@ -30,6 +30,24 @@ or pass:
 --subject-root /path/to/rust-skills
 ```
 
+## Local Configuration
+
+Copy the example config for machine-specific defaults:
+
+```bash
+cp bench.config.example.json bench.config.json
+```
+
+`bench.config.json` is intentionally ignored by git. It can set the subject
+repository, result directory, engines, profiles, repeats, concurrency, timeout,
+and whether real agents are enabled by default.
+
+Every script also accepts:
+
+```bash
+--config /path/to/bench.config.json
+```
+
 ## Commands
 
 Audit fixture breadth and fairness:
@@ -69,3 +87,7 @@ baseline, this repository, or ask one profile to outperform another.
 
 Benchmark failures are data. If `rust-skills` underperforms, fix the subject
 skills/runtime, not the fixture expectations or scoring rules.
+
+Aragorn/workflow files are not part of this repository. Keep `doc/`,
+`.aragorn/`, workflow state, local reports, and private machine configuration
+out of git.

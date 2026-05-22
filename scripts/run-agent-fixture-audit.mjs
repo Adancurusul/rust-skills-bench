@@ -26,9 +26,19 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function loadConfig() {
+  const configPath = path.resolve(argValue(
+    "--config",
+    process.env.RUST_SKILLS_BENCH_CONFIG || path.join(root, "bench.config.json")
+  ));
+  if (!fs.existsSync(configPath)) return {};
+  return JSON.parse(fs.readFileSync(configPath, "utf8"));
+}
+
+const config = loadConfig();
 const subjectRoot = path.resolve(argValue(
   "--subject-root",
-  process.env.RUST_SKILLS_SUBJECT_ROOT || path.resolve(root, "..", "rust-skills")
+  process.env.RUST_SKILLS_SUBJECT_ROOT || config.subjectRoot || path.resolve(root, "..", "rust-skills")
 ));
 
 function countBy(items, key) {
@@ -115,11 +125,11 @@ function auditCase(testCase, seenIds) {
 
 const casesPath = path.resolve(argValue(
   "--cases",
-  path.join(root, "fixtures", "agent-matrix-comprehensive.json")
+  config.cases || path.join(root, "fixtures", "agent-matrix-comprehensive.json")
 ));
 const reportPath = path.resolve(argValue(
   "--report",
-  path.join(root, "results", "agent-fixture-audit-report.json")
+  path.join(root, config.resultsDir || "results", "agent-fixture-audit-report.json")
 ));
 const cases = readJson(casesPath);
 const seenIds = new Set();

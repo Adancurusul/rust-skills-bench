@@ -1,0 +1,13 @@
+{
+  "subjectRoot": "../rust-skills",
+  "cases": "fixtures/agent-matrix-comprehensive.json",
+  "resultsDir": "results",
+  "engines": ["codex", "claude-code"],
+  "profiles": ["baseline", "rust-skills"],
+  "repeats": 1,
+  "concurrency": 4,
+  "timeoutMs": 600000,
+  "maxSkillContextChars": 6000,
+  "allowRealAgents": false,
+  "benchmarkMode": true
+}
