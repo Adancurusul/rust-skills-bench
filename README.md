@@ -50,6 +50,12 @@ Every script also accepts:
 
 ## Commands
 
+List the benchmark taxonomy and case catalog:
+
+```bash
+npm run cases
+```
+
 Audit fixture breadth and fairness:
 
 ```bash
@@ -91,3 +97,10 @@ skills/runtime, not the fixture expectations or scoring rules.
 Aragorn/workflow files are not part of this repository. Keep `doc/`,
 `.aragorn/`, workflow state, local reports, and private machine configuration
 out of git.
+
+## Documentation
+
+- [Benchmark Taxonomy](docs/benchmark-taxonomy.md)
+- [Case Catalog](docs/case-catalog.md)
+- [Runbook](docs/runbook.md)
+- [Report Semantics](docs/report-semantics.md)
