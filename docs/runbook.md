@@ -10,15 +10,31 @@ cp bench.config.example.json bench.config.json
 Edit `bench.config.json` for machine-specific paths or defaults. The file is
 ignored by git.
 
+Run a prerequisite check directly when diagnosing a machine:
+
+```bash
+npm run doctor
+```
+
 ## Dry Verification
 
 ```bash
-npm run audit
-npm run smoke:dry
+npm run audit:all
+npm run smoke:dry:all
 ```
 
 Dry runs do not launch real agents. They prove fixture shape, routing, prompt
 construction, and evidence capsule writing.
+
+## Real Quick Run
+
+```bash
+npm run agents:quick-real
+```
+
+This launches real `codex` and `claude-code` processes for the quick-tagged
+case across `baseline` and `rust-skills`. It is the fastest evidence-producing
+real run.
 
 ## Real Focused Run
 
@@ -41,6 +57,42 @@ npm run agents:codegen
 
 Code-generation cases copy fixtures from the subject repository, run agents in
 isolated workspaces, and execute verification commands such as `cargo test`.
+
+## Full Local Matrix
+
+```bash
+npm run agents:all
+```
+
+This runs every bundled case from `fixtures/agent-matrix-comprehensive.json`
+and `fixtures/prompt-suites/rust-skills-expanded.json` with three repeats
+across both profiles and the built-in engines. Use benchmark mode results as
+measurement: if `rust-skills` underperforms, keep the fixture fixed and improve
+the subject skills or runtime.
+
+## Custom Agent Adapter
+
+Set `engineAdapters` in `bench.config.json` to route a non-built-in Agent CLI
+through the same harness:
+
+```json
+{
+  "engines": ["custom-local"],
+  "engineAdapters": {
+    "custom-local": {
+      "command": "sh",
+      "args": [
+        "-lc",
+        "${AGENT_CMD:?set AGENT_CMD} < \"{{promptFile}}\" > \"{{outputFile}}\""
+      ]
+    }
+  }
+}
+```
+
+The adapter receives a real workspace and must write the final answer to
+`{{outputFile}}`. Supported tokens are `{{prompt}}`, `{{promptFile}}`,
+`{{workspace}}`, `{{outputFile}}`, and `{{runDir}}`.
 
 ## Reporting
 

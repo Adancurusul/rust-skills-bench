@@ -29,9 +29,18 @@ stable enough for trend charts; tags are intentionally richer and can overlap.
 
 ## Engines
 
-The harness currently supports `codex` and `claude-code`. Each run records the
-engine, profile, repeat number, routing capsule, prompt, output, workspace diff,
-verification commands, and failure reasons.
+The harness includes built-in support for `codex` and `claude-code`. Additional
+real Agent CLIs can be configured through `engineAdapters` in
+`bench.config.json`. Each run records the engine, profile, repeat number,
+routing capsule, prompt, output, workspace diff, verification commands, and
+failure reasons.
+
+## Prompt Suites
+
+| Suite | Path | Purpose |
+|-------|------|---------|
+| Comprehensive | `fixtures/agent-matrix-comprehensive.json` | Original broad real-Agent matrix across answer, artifact, review, and code generation surfaces. |
+| Expanded Rust Skills | `fixtures/prompt-suites/rust-skills-expanded.json` | Harder and wider product-neutral prompts for ownership, async, unsafe, FFI, embedded/no-std, review-debugging, and operational artifacts. |
 
 ## Metrics
 
@@ -42,6 +51,11 @@ verification commands, and failure reasons.
 | `patchGenerationRate` | The workspace contains a git diff after the run. |
 | `qualityGatePassRate` | Text/file expectations and verification commands passed. |
 | `timeoutRate` | Agent process timed out. |
+
+Text expectations support exact required phrases and `mustMentionAny` groups
+for cases where several equivalent terms are acceptable. This keeps the
+benchmark less brittle while still checking that the answer covers the intended
+concept.
 
 Quality failures are benchmark data. Do not weaken fixtures or scoring to make
 a profile look better.

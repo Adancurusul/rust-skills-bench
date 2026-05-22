@@ -1,6 +1,9 @@
 {
   "subjectRoot": "../rust-skills",
-  "cases": "fixtures/agent-matrix-comprehensive.json",
+  "cases": [
+    "fixtures/agent-matrix-comprehensive.json",
+    "fixtures/prompt-suites/rust-skills-expanded.json"
+  ],
   "resultsDir": "results",
   "engines": ["codex", "claude-code"],
   "profiles": ["baseline", "rust-skills"],
@@ -9,5 +12,27 @@
   "timeoutMs": 600000,
   "maxSkillContextChars": 6000,
   "allowRealAgents": false,
-  "benchmarkMode": true
+  "benchmarkMode": true,
+  "engineAdapters": {
+    "tmax": {
+      "command": "tmax",
+      "args": [
+        "run",
+        "--cwd",
+        "{{workspace}}",
+        "--output",
+        "{{outputFile}}",
+        "--prompt",
+        "{{prompt}}"
+      ]
+    },
+    "custom-local": {
+      "command": "sh",
+      "shell": false,
+      "args": [
+        "-lc",
+        "${AGENT_CMD:?set AGENT_CMD} < \"{{promptFile}}\" > \"{{outputFile}}\""
+      ]
+    }
+  }
 }

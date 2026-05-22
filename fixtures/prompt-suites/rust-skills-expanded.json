@@ -1,0 +1,270 @@
+[
+  {
+    "id": "answer-ownership-mut-borrow-boundary",
+    "category": "answer-quality",
+    "difficulty": "medium",
+    "prompt": "A Rust API takes ownership of a configuration struct, mutates one field, then the caller needs the config again. Explain when to use &mut, when to return the owned value, and why clone-everywhere is weak API design.",
+    "expected": {
+      "minResponseChars": 500,
+      "mustMention": ["ownership", "&mut", "borrow", "API"],
+      "mustNotMention": ["clone everything", "just clone"]
+    },
+    "tags": ["answer", "ownership", "api-design", "borrowing"]
+  },
+  {
+    "id": "answer-ownership-closure-move-iterator",
+    "category": "answer-quality",
+    "difficulty": "medium",
+    "prompt": "A Rust iterator pipeline moves a String into a closure and later tries to use it again. Explain the ownership issue and give alternatives using references, cloning only when intentional, or restructuring the closure.",
+    "expected": {
+      "minResponseChars": 500,
+      "mustMention": ["closure", "move", "borrow", "clone"]
+    },
+    "tags": ["answer", "ownership", "iterator", "borrowing"]
+  },
+  {
+    "id": "answer-lifetime-return-reference",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "A Rust function tries to return a reference to a string built inside the function and hits a lifetime error. Explain why the reference is invalid and give production-safe return-type choices.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["lifetime", "reference", "owned", "String"]
+    },
+    "tags": ["answer", "ownership", "lifetime", "api-design"]
+  },
+  {
+    "id": "answer-send-sync-spawn-state",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "A Tokio task spawned onto a multithreaded runtime captures shared state and fails Send bounds. Explain the cause and how Arc, Mutex/RwLock, or task-local design should be chosen.",
+    "expected": {
+      "minResponseChars": 600,
+      "mustMention": ["Send", "Tokio", "Arc"],
+      "mustMentionAny": [["Mutex", "RwLock", "task-local"]]
+    },
+    "tags": ["answer", "async", "concurrency", "web"]
+  },
+  {
+    "id": "answer-blocking-in-async-runtime",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "A Rust async service calls blocking filesystem and compression functions directly inside request handlers. Explain the runtime risk and the safer design using blocking pools or async equivalents.",
+    "expected": {
+      "minResponseChars": 600,
+      "mustMention": ["async", "blocking", "runtime"],
+      "mustMentionAny": [["spawn_blocking", "blocking pool", "async equivalent"]]
+    },
+    "tags": ["answer", "async", "concurrency", "performance", "web"]
+  },
+  {
+    "id": "answer-channel-backpressure-policy",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "A Rust service uses an unbounded channel between producers and workers. Explain how to design bounded queues, backpressure, drop policy, and shutdown behavior.",
+    "expected": {
+      "minResponseChars": 600,
+      "mustMention": ["bounded", "backpressure", "shutdown"],
+      "mustMentionAny": [["drop policy", "overflow", "load shedding"]]
+    },
+    "tags": ["answer", "async", "concurrency", "service-design"]
+  },
+  {
+    "id": "answer-cli-exit-code-quick",
+    "category": "answer-quality",
+    "difficulty": "medium",
+    "prompt": "A Rust CLI prints a human-readable error message but still exits with code 0 when parsing fails. Explain the user impact and the automation impact, then propose a fix.",
+    "expected": {
+      "minResponseChars": 450,
+      "mustMention": ["exit code", "error", "automation"]
+    },
+    "tags": ["answer", "cli", "error-handling", "quick"]
+  },
+  {
+    "id": "answer-error-source-context-chain",
+    "category": "answer-quality",
+    "difficulty": "medium",
+    "prompt": "A Rust application logs only 'operation failed' for nested IO and parsing errors. Explain how to preserve error source chains and add useful context without leaking internals from a library API.",
+    "expected": {
+      "minResponseChars": 500,
+      "mustMention": ["context", "source", "library"],
+      "mustMentionAny": [["thiserror", "anyhow"]]
+    },
+    "tags": ["answer", "error-handling", "api-design", "operations"]
+  },
+  {
+    "id": "answer-unsafe-repr-c-layout",
+    "category": "answer-quality",
+    "difficulty": "expert",
+    "prompt": "A Rust struct is shared with C code through FFI. Explain the layout guarantees needed before exposing pointers to it and when repr(C), padding, and versioning matter.",
+    "expected": {
+      "minResponseChars": 650,
+      "mustMention": ["repr(C)", "layout", "padding", "FFI"]
+    },
+    "tags": ["answer", "unsafe", "ffi", "api-design"]
+  },
+  {
+    "id": "answer-unsafe-maybeuninit-buffer",
+    "category": "answer-quality",
+    "difficulty": "expert",
+    "prompt": "A Rust wrapper fills an out-parameter buffer from a C function using MaybeUninit. Explain how to track initialization and avoid reading uninitialized memory.",
+    "expected": {
+      "minResponseChars": 650,
+      "mustMention": ["MaybeUninit", "initialized", "unsafe", "SAFETY"]
+    },
+    "tags": ["answer", "unsafe", "ffi", "memory-safety"]
+  },
+  {
+    "id": "answer-unsafe-cstring-lifetime",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "A Rust FFI wrapper passes CString::new(value).unwrap().as_ptr() directly into C and stores the pointer for later. Explain the lifetime bug and a safe ownership design.",
+    "expected": {
+      "minResponseChars": 580,
+      "mustMention": ["CString", "as_ptr", "lifetime", "ownership"]
+    },
+    "tags": ["answer", "unsafe", "ffi", "lifetime"]
+  },
+  {
+    "id": "answer-unsafe-packed-alignment",
+    "category": "answer-quality",
+    "difficulty": "expert",
+    "prompt": "A Rust parser reads a #[repr(packed)] network header by taking references to fields. Explain the alignment problem and safe alternatives.",
+    "expected": {
+      "minResponseChars": 620,
+      "mustMention": ["repr(packed)", "alignment", "unaligned"],
+      "mustMentionAny": [["read_unaligned", "byte parsing", "copy"]]
+    },
+    "tags": ["answer", "unsafe", "parser", "memory-safety"]
+  },
+  {
+    "id": "answer-no-std-panic-alloc-policy",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "A no_std firmware crate accidentally pulls in allocation through formatting and panics. Explain how to design panic, logging, and allocation policy for a small embedded target.",
+    "expected": {
+      "minResponseChars": 580,
+      "mustMention": ["no_std", "panic", "allocation", "embedded"]
+    },
+    "tags": ["answer", "embedded", "no-std", "resource-management"]
+  },
+  {
+    "id": "answer-embedded-isr-logging",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "An embedded Rust interrupt handler writes formatted log strings directly to UART and sometimes misses deadlines. Explain a safer ISR logging design.",
+    "expected": {
+      "minResponseChars": 560,
+      "mustMention": ["interrupt", "UART", "buffer"],
+      "mustMentionAny": [["heapless", "ring buffer", "defmt"]]
+    },
+    "tags": ["answer", "embedded", "no-std", "concurrency"]
+  },
+  {
+    "id": "answer-trait-object-plugin-abi",
+    "category": "answer-quality",
+    "difficulty": "hard",
+    "prompt": "A Rust plugin system wants dynamic dispatch for plugins, but plugin methods are generic and some return Self. Explain the object-safety issue and outline registry-friendly trait design.",
+    "expected": {
+      "minResponseChars": 560,
+      "mustMention": ["dyn", "generic", "Self"],
+      "mustMentionAny": [["object safe", "object-safe"]]
+    },
+    "tags": ["answer", "traits", "api-design"]
+  },
+  {
+    "id": "review-debug-blocking-async-handler",
+    "category": "review-debugging",
+    "difficulty": "hard",
+    "prompt": "Review a Rust web handler that performs blocking DNS lookup and file compression inside async request handling. Identify the likely production symptom and safer alternatives.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["blocking", "async", "latency"],
+      "mustMentionAny": [["spawn_blocking", "worker pool", "async DNS"]]
+    },
+    "tags": ["review", "async", "web", "performance", "debugging"]
+  },
+  {
+    "id": "review-debug-static-mut-cache",
+    "category": "review-debugging",
+    "difficulty": "expert",
+    "prompt": "Review a Rust global cache implemented with static mut and raw pointers. Explain the data-race and aliasing risks and propose safer primitives.",
+    "expected": {
+      "minResponseChars": 580,
+      "mustMention": ["static mut", "data race", "aliasing"],
+      "mustMentionAny": [["Mutex", "RwLock", "OnceLock"]]
+    },
+    "tags": ["review", "unsafe", "concurrency", "debugging"]
+  },
+  {
+    "id": "review-debug-transmute-endian-expanded",
+    "category": "review-debugging",
+    "difficulty": "expert",
+    "prompt": "Review code that transmutes a byte array from disk into a Rust header struct for speed. Explain alignment, padding, endian, and validity risks, then give a measured alternative.",
+    "expected": {
+      "minResponseChars": 600,
+      "mustMention": ["transmute", "alignment", "padding"],
+      "mustMentionAny": [["endian", "endianness"]]
+    },
+    "tags": ["review", "unsafe", "parser", "performance", "debugging"]
+  },
+  {
+    "id": "review-debug-unwrap-library",
+    "category": "review-debugging",
+    "difficulty": "medium",
+    "prompt": "Review a Rust library function that calls unwrap on user-provided input and panics in production. Explain the failure mode and a better error boundary.",
+    "expected": {
+      "minResponseChars": 450,
+      "mustMention": ["unwrap", "panic", "Result", "library"]
+    },
+    "tags": ["review", "error-handling", "api-design", "debugging"]
+  },
+  {
+    "id": "artifact-release-quality-gates",
+    "category": "artifact-generation",
+    "difficulty": "medium",
+    "prompt": "Create RELEASE_GATES.md for a Rust crate with concise release checks for formatting, clippy, tests, MSRV, docs, and unsafe review. Include the exact phrase: release gates must be reproducible.",
+    "expected": {
+      "files": ["RELEASE_GATES.md"],
+      "mustMentionInFiles": [
+        {
+          "path": "RELEASE_GATES.md",
+          "text": "release gates must be reproducible"
+        }
+      ]
+    },
+    "tags": ["artifact", "review", "unsafe", "error-handling"]
+  },
+  {
+    "id": "artifact-async-shutdown-runbook",
+    "category": "artifact-generation",
+    "difficulty": "hard",
+    "prompt": "Create SHUTDOWN_RUNBOOK.md for a Rust async service covering signal handling, cancellation tokens, bounded queues, timeouts, and observability. Include the exact phrase: shutdown is an operational contract.",
+    "expected": {
+      "files": ["SHUTDOWN_RUNBOOK.md"],
+      "mustMentionInFiles": [
+        {
+          "path": "SHUTDOWN_RUNBOOK.md",
+          "text": "shutdown is an operational contract"
+        }
+      ]
+    },
+    "tags": ["artifact", "async", "concurrency", "operations"]
+  },
+  {
+    "id": "artifact-ffi-safety-template",
+    "category": "artifact-generation",
+    "difficulty": "hard",
+    "prompt": "Create FFI_SAFETY_TEMPLATE.md for reviewing Rust FFI wrappers. Cover pointer validity, length, alignment, ownership, lifetime, aliasing, and tests. Include the exact phrase: FFI safety is a boundary contract.",
+    "expected": {
+      "files": ["FFI_SAFETY_TEMPLATE.md"],
+      "mustMentionInFiles": [
+        {
+          "path": "FFI_SAFETY_TEMPLATE.md",
+          "text": "FFI safety is a boundary contract"
+        }
+      ]
+    },
+    "tags": ["artifact", "unsafe", "ffi", "review"]
+  }
+]

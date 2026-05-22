@@ -54,6 +54,20 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
+function readCases(casesValue) {
+  const paths = splitCsv(casesValue);
+  if (paths.length === 0) throw new Error("--cases must not be empty");
+  const cases = [];
+  for (const casePath of paths) {
+    const absolutePath = path.resolve(casePath);
+    const loaded = readJson(absolutePath);
+    const items = Array.isArray(loaded) ? loaded : loaded.cases;
+    if (!Array.isArray(items)) throw new Error(`${absolutePath} must contain an array or { "cases": [] }`);
+    for (const item of items) cases.push({ ...item, sourceCaseFile: absolutePath });
+  }
+  return { cases, casesPaths: paths.map((item) => path.resolve(item)) };
+}
+
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
@@ -204,6 +218,28 @@ function prepareWorkspace(caseItem, runDir) {
   return workspace;
 }
 
+function renderTemplate(value, context) {
+  return String(value).replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_match, key) => {
+    if (!(key in context)) throw new Error(`unknown engine adapter token: ${key}`);
+    return context[key];
+  });
+}
+
+function engineAdapter(engine, options = {}) {
+  return options.engineAdapters?.[engine] || null;
+}
+
+function engineCommandName(engine, options = {}) {
+  if (engine === "codex") {
+    return "codex";
+  }
+  if (engine === "claude-code") {
+    return "claude";
+  }
+  const adapter = engineAdapter(engine, options);
+  return adapter?.command || null;
+}
+
 function buildEngineCommand(engine, prompt, workspace, outputFile, options = {}) {
   if (engine === "codex") {
     return {
@@ -240,7 +276,23 @@ function buildEngineCommand(engine, prompt, workspace, outputFile, options = {})
       ]
     };
   }
-  throw new Error(`unsupported engine: ${engine}`);
+  const adapter = engineAdapter(engine, options);
+  if (!adapter) throw new Error(`unsupported engine: ${engine}`);
+  if (!adapter.command) throw new Error(`engine adapter ${engine} requires command`);
+  if (!Array.isArray(adapter.args)) throw new Error(`engine adapter ${engine} requires args array`);
+  const context = {
+    prompt,
+    promptFile: options.promptFile,
+    workspace,
+    outputFile,
+    runDir: options.runDir
+  };
+  return {
+    command: renderTemplate(adapter.command, context),
+    args: adapter.args.map((arg) => renderTemplate(arg, context)),
+    shell: adapter.shell === true,
+    env: adapter.env || {}
+  };
 }
 
 function summarizeRouting(route) {
@@ -361,6 +413,13 @@ function evaluateText(text, expected = {}) {
   for (const phrase of expected.mustMention || []) {
     if (!text.toLowerCase().includes(String(phrase).toLowerCase())) {
       failures.push({ kind: "missing_phrase", phrase });
+    }
+  }
+  for (const group of expected.mustMentionAny || []) {
+    const phrases = Array.isArray(group) ? group : group.phrases;
+    const label = Array.isArray(group) ? group.join(" | ") : group.label || phrases.join(" | ");
+    if (!phrases.some((phrase) => text.toLowerCase().includes(String(phrase).toLowerCase()))) {
+      failures.push({ kind: "missing_any_phrase", label, phrases });
     }
   }
   for (const phrase of expected.mustNotMention || []) {
@@ -498,7 +557,8 @@ async function runOne(caseItem, engine, profile, repeat, runRoot, options) {
     return skipped;
   }
 
-  const commandName = engine === "codex" ? "codex" : "claude";
+  const commandName = engineCommandName(engine, options);
+  if (!commandName) throw new Error(`unsupported engine: ${engine}`);
   if (!commandExists(commandName)) {
     const skipped = {
       caseId: caseItem.id,
@@ -531,14 +591,20 @@ async function runOne(caseItem, engine, profile, repeat, runRoot, options) {
   const workspace = prepareWorkspace(caseItem, runDir);
   await initGit(workspace);
   const outputFile = path.join(runDir, "output.md");
-  const { command, args } = buildEngineCommand(engine, promptProfile.prompt, workspace, outputFile, options);
+  const { command, args, shell, env } = buildEngineCommand(engine, promptProfile.prompt, workspace, outputFile, {
+    ...options,
+    promptFile,
+    runDir
+  });
   const processResult = await runProcess(command, args, {
     cwd: workspace,
     env: {
       ...process.env,
       HOME: process.env.HOME,
-      USERPROFILE: process.env.USERPROFILE
+      USERPROFILE: process.env.USERPROFILE,
+      ...env
     },
+    shell,
     timeoutMs: options.timeoutMs
   });
 
@@ -632,10 +698,11 @@ async function runQueue(tasks, concurrency) {
   return results;
 }
 
-const casesPath = path.resolve(argValue(
+const casesValue = argValue(
   "--cases",
-  config.cases || path.join(root, "fixtures", "agent-matrix-comprehensive.json")
-));
+  csvConfig(config.cases, path.join(root, "fixtures", "agent-matrix-comprehensive.json"))
+);
+const { cases: allCases, casesPaths } = readCases(casesValue);
 const engines = splitCsv(argValue("--engines", csvConfig(config.engines, "codex,claude-code")));
 const profiles = splitCsv(argValue("--profiles", csvConfig(config.profiles, "baseline,rust-skills")));
 const repeats = Number.parseInt(argValue("--repeats", String(config.repeats || 1)), 10);
@@ -664,10 +731,11 @@ const reportPath = path.resolve(argValue(
   "--report",
   path.join(runRoot, "report.json")
 ));
-const cases = readJson(casesPath)
+const engineAdapters = config.engineAdapters || {};
+const cases = allCases
   .filter((caseItem) => !caseFilter || caseItem.id === caseFilter || (caseItem.tags || []).includes(caseFilter));
 
-if (cases.length === 0) throw new Error(`no Agent matrix cases matched ${casesPath}`);
+if (cases.length === 0) throw new Error(`no Agent matrix cases matched ${caseFilter || "(none)"}`);
 if (!Number.isFinite(repeats) || repeats < 1) throw new Error("repeats must be >= 1");
 if (profiles.length === 0) throw new Error("profiles must not be empty");
 
@@ -681,7 +749,8 @@ for (const caseItem of cases) {
           timeoutMs,
           maxSkillContextChars,
           codexIgnoreUserConfig,
-          codexIgnoreRules
+          codexIgnoreRules,
+          engineAdapters
         }));
       }
     }
@@ -702,7 +771,8 @@ const report = {
   runId,
   generatedAt: new Date().toISOString(),
   subjectRoot,
-  casesPath,
+  casesPath: casesPaths.length === 1 ? casesPaths[0] : casesPaths.join(","),
+  casesPaths,
   engines,
   profiles,
   repeats,
@@ -714,6 +784,14 @@ const report = {
     ignoreUserConfig: codexIgnoreUserConfig,
     ignoreRules: codexIgnoreRules
   },
+  engineAdapters: Object.fromEntries(Object.entries(engineAdapters).map(([name, adapter]) => [
+    name,
+    {
+      command: adapter.command,
+      shell: adapter.shell === true,
+      argsCount: Array.isArray(adapter.args) ? adapter.args.length : 0
+    }
+  ])),
   qualityPassed,
   requireRealAgentsPassed,
   runRoot,

@@ -25,6 +25,32 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
+function splitCsv(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function csvConfig(value, fallback) {
+  if (Array.isArray(value)) return value.join(",");
+  return value || fallback;
+}
+
+function readCases(casesValue) {
+  const paths = splitCsv(casesValue);
+  if (paths.length === 0) throw new Error("--cases must not be empty");
+  const cases = [];
+  for (const casePath of paths) {
+    const absolutePath = path.resolve(casePath);
+    const loaded = readJson(absolutePath);
+    const items = Array.isArray(loaded) ? loaded : loaded.cases;
+    if (!Array.isArray(items)) throw new Error(`${absolutePath} must contain an array or { "cases": [] }`);
+    for (const item of items) cases.push({ ...item, sourceCaseFile: absolutePath });
+  }
+  return { cases, casesPaths: paths.map((item) => path.resolve(item)) };
+}
+
 function loadConfig() {
   const configPath = path.resolve(argValue(
     "--config",
@@ -65,7 +91,7 @@ function markdown(cases, casesPath) {
   const lines = [
     "# Case Catalog",
     "",
-    `Source: \`${path.relative(root, casesPath)}\``,
+    `Source: \`${Array.isArray(casesPath) ? casesPath.map((item) => path.relative(root, item)).join("`, `") : path.relative(root, casesPath)}\``,
     "",
     "## Summary",
     "",
@@ -96,17 +122,17 @@ function markdown(cases, casesPath) {
 }
 
 const config = loadConfig();
-const casesPath = path.resolve(argValue(
+const casesValue = argValue(
   "--cases",
-  config.cases || path.join(root, "fixtures", "agent-matrix-comprehensive.json")
-));
-const cases = readJson(casesPath);
+  csvConfig(config.cases, path.join(root, "fixtures", "agent-matrix-comprehensive.json"))
+);
+const { cases, casesPaths } = readCases(casesValue);
 const outputPath = argValue("--out", null);
 const format = argValue("--format", outputPath?.endsWith(".json") ? "json" : "markdown");
 
 const output = format === "json"
-  ? `${JSON.stringify({ casesPath, summary: { total: cases.length, categories: countBy(cases, "category"), difficulties: countBy(cases, "difficulty"), tags: tagCounts(cases) }, cases }, null, 2)}\n`
-  : markdown(cases, casesPath);
+  ? `${JSON.stringify({ casesPath: casesPaths.length === 1 ? casesPaths[0] : casesPaths.join(","), casesPaths, summary: { total: cases.length, categories: countBy(cases, "category"), difficulties: countBy(cases, "difficulty"), tags: tagCounts(cases) }, cases }, null, 2)}\n`
+  : markdown(cases, casesPaths.length === 1 ? casesPaths[0] : casesPaths);
 
 if (outputPath) {
   ensureDir(path.dirname(outputPath));

@@ -50,28 +50,36 @@ Every script also accepts:
 
 ## Commands
 
+Run the external quick check. This is the recommended first command for a new
+machine because it checks local prerequisites, audits all fixtures, and writes
+dry-run evidence capsules without spending real Agent calls:
+
+```bash
+npm test
+```
+
 List the benchmark taxonomy and case catalog:
 
 ```bash
-npm run cases
+npm run cases:all
 ```
 
 Audit fixture breadth and fairness:
 
 ```bash
-npm run audit
+npm run audit:all
 ```
 
 Run a dry smoke without launching real agents:
 
 ```bash
-npm run smoke:dry
+npm run smoke:dry:all
 ```
 
 Run a real focused benchmark:
 
 ```bash
-npm run agents:focused
+npm run agents:quick-real
 ```
 
 Run real code-generation comparison:
@@ -80,11 +88,43 @@ Run real code-generation comparison:
 npm run agents:codegen
 ```
 
+Run the full local matrix across all bundled prompt suites:
+
+```bash
+npm run agents:all
+```
+
+`agents:all` is intentionally expensive. It runs real Agent processes with the
+same prompts across `baseline` and `rust-skills` profiles.
+
 Generate a Markdown summary from a JSON report:
 
 ```bash
 npm run report -- --report results/agent-matrix/<run-id>/report.json --out results/<run-id>.md
 ```
+
+## Custom Engines
+
+The built-in engines are `codex` and `claude-code`. Other real Agent CLIs can
+be added in `bench.config.json` with `engineAdapters`:
+
+```json
+{
+  "engines": ["codex", "custom-local"],
+  "engineAdapters": {
+    "custom-local": {
+      "command": "sh",
+      "args": [
+        "-lc",
+        "${AGENT_CMD:?set AGENT_CMD} < \"{{promptFile}}\" > \"{{outputFile}}\""
+      ]
+    }
+  }
+}
+```
+
+Supported adapter tokens are `{{prompt}}`, `{{promptFile}}`, `{{workspace}}`,
+`{{outputFile}}`, and `{{runDir}}`.
 
 ## Policy
 
@@ -102,5 +142,6 @@ out of git.
 
 - [Benchmark Taxonomy](docs/benchmark-taxonomy.md)
 - [Case Catalog](docs/case-catalog.md)
+- [Open Source Eval Notes](docs/open-source-eval-notes.md)
 - [Runbook](docs/runbook.md)
 - [Report Semantics](docs/report-semantics.md)

@@ -17,6 +17,32 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
+function splitCsv(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function csvConfig(value, fallback) {
+  if (Array.isArray(value)) return value.join(",");
+  return value || fallback;
+}
+
+function readCases(casesValue) {
+  const paths = splitCsv(casesValue);
+  if (paths.length === 0) throw new Error("--cases must not be empty");
+  const cases = [];
+  for (const casePath of paths) {
+    const absolutePath = path.resolve(casePath);
+    const loaded = readJson(absolutePath);
+    const items = Array.isArray(loaded) ? loaded : loaded.cases;
+    if (!Array.isArray(items)) throw new Error(`${absolutePath} must contain an array or { "cases": [] }`);
+    for (const item of items) cases.push({ ...item, sourceCaseFile: absolutePath });
+  }
+  return { cases, casesPaths: paths.map((item) => path.resolve(item)) };
+}
+
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
@@ -63,6 +89,7 @@ function hasExpectedSignal(testCase) {
   return Boolean(
     expected.minResponseChars ||
     (expected.mustMention || []).length ||
+    (expected.mustMentionAny || []).length ||
     (expected.mustNotMention || []).length ||
     (expected.files || []).length ||
     (expected.mustMentionInFiles || []).length ||
@@ -86,6 +113,12 @@ function auditCase(testCase, seenIds) {
   }
   if (!hasExpectedSignal(testCase)) {
     failures.push({ kind: "missing_mechanical_expectation", id: testCase.id });
+  }
+  for (const group of testCase.expected?.mustMentionAny || []) {
+    const phrases = Array.isArray(group) ? group : group.phrases;
+    if (!Array.isArray(phrases) || phrases.length < 2) {
+      failures.push({ kind: "weak_must_mention_any", id: testCase.id });
+    }
   }
 
   const prompt = String(testCase.prompt || "").toLowerCase();
@@ -123,15 +156,15 @@ function auditCase(testCase, seenIds) {
   return failures;
 }
 
-const casesPath = path.resolve(argValue(
+const casesValue = argValue(
   "--cases",
-  config.cases || path.join(root, "fixtures", "agent-matrix-comprehensive.json")
-));
+  csvConfig(config.cases, path.join(root, "fixtures", "agent-matrix-comprehensive.json"))
+);
 const reportPath = path.resolve(argValue(
   "--report",
   path.join(root, config.resultsDir || "results", "agent-fixture-audit-report.json")
 ));
-const cases = readJson(casesPath);
+const { cases, casesPaths } = readCases(casesValue);
 const seenIds = new Set();
 const failures = cases.flatMap((testCase) => auditCase(testCase, seenIds));
 const categories = countBy(cases, "category");
@@ -172,7 +205,8 @@ const report = {
   status: failures.length === 0 ? "PASS" : "FAIL",
   generatedAt: new Date().toISOString(),
   subjectRoot,
-  casesPath,
+  casesPath: casesPaths.length === 1 ? casesPaths[0] : casesPaths.join(","),
+  casesPaths,
   summary: {
     total: cases.length,
     categories,
