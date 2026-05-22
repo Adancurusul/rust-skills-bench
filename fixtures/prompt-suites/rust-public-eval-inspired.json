@@ -1,0 +1,309 @@
+[
+  {
+    "id": "compiler-e0382-moved-builder",
+    "category": "compiler-diagnostics",
+    "difficulty": "medium",
+    "prompt": "A Rust builder consumes self in finish(), but the caller tries to inspect one field after calling finish() and gets E0382. Explain the ownership cause and give API-level fixes without recommending clone-everywhere.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["E0382", "ownership", "builder"],
+      "mustMentionAny": [
+        ["borrow", "reference", "return"],
+        ["clone only when intentional", "avoid clone-everywhere", "do not clone everything", "avoid unnecessary cloning", "clone only if", "clone as a deliberate", "cloning is only appropriate", "avoid making every caller clone", "without relying on clone", "without relying on `clone()`", "don't fix this by cloning everywhere", "avoid just clone it", "cloning is fine only when"]
+      ]
+    },
+    "tags": ["answer", "compiler-diagnostics", "ownership", "api-design", "rust-eval"]
+  },
+  {
+    "id": "compiler-e0502-split-borrows",
+    "category": "compiler-diagnostics",
+    "difficulty": "medium",
+    "prompt": "A Rust function iterates over a Vec immutably while also pushing derived items into the same Vec and hits E0502. Explain the borrow conflict and propose production-safe refactors.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["E0502", "borrow", "Vec"],
+      "mustMentionAny": [["two-phase", "collect", "split"], ["mutable", "immutable"]]
+    },
+    "tags": ["answer", "compiler-diagnostics", "ownership", "borrowing", "rust-eval"]
+  },
+  {
+    "id": "compiler-e0716-temporary-drop",
+    "category": "compiler-diagnostics",
+    "difficulty": "medium",
+    "prompt": "A Rust program stores a reference returned from format!(...).as_str() and gets E0716 about a temporary value being dropped while borrowed. Explain the lifetime issue and better ownership choices.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["E0716", "temporary"],
+      "mustMentionAny": [["lifetime", "outlives", "outlive", "alive"], ["String", "owned"], ["borrow", "reference"]]
+    },
+    "tags": ["answer", "compiler-diagnostics", "lifetime", "ownership", "rust-eval"]
+  },
+  {
+    "id": "compiler-e0277-send-bound-rc",
+    "category": "compiler-diagnostics",
+    "difficulty": "hard",
+    "prompt": "A Tokio task captures Rc<RefCell<State>> and rustc reports E0277 because the future cannot be sent between threads safely. Explain the Send bound and the design choices.",
+    "expected": {
+      "minResponseChars": 620,
+      "mustMention": ["E0277", "Send", "Rc"],
+      "mustMentionAny": [["Arc", "Mutex", "RwLock"], ["LocalSet", "current_thread", "task-local"]]
+    },
+    "tags": ["answer", "compiler-diagnostics", "async", "concurrency", "rust-eval"]
+  },
+  {
+    "id": "compiler-e0282-type-inference-channel",
+    "category": "compiler-diagnostics",
+    "difficulty": "medium",
+    "prompt": "A Rust service creates mpsc::channel(32) and sends different error variants later, but rustc reports E0282 type annotations needed. Explain why inference fails and where to place the type boundary.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["E0282", "type", "channel"],
+      "mustMentionAny": [["annotation", "annotate", "turbofish", "type parameter", "explicit type", "type boundary", "::<"], ["enum", "error type"]]
+    },
+    "tags": ["answer", "compiler-diagnostics", "async", "error-handling", "rust-eval"]
+  },
+  {
+    "id": "compiler-e0308-result-error-boundary",
+    "category": "compiler-diagnostics",
+    "difficulty": "medium",
+    "prompt": "A Rust function returns Result<T, AppError>, but one branch returns io::Error directly and rustc reports E0308 mismatched types. Explain the error boundary and idiomatic conversion strategy.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["E0308", "Result", "AppError"],
+      "mustMentionAny": [["From", "map_err"], ["thiserror", "source"]]
+    },
+    "tags": ["answer", "compiler-diagnostics", "error-handling", "api-design", "rust-eval"]
+  },
+  {
+    "id": "api-evolution-msrv-stabilization",
+    "category": "api-evolution",
+    "difficulty": "hard",
+    "prompt": "A Rust crate wants to use a newly stabilized std API, but the crate promises an older MSRV to downstream users. Explain how to decide between using the API, adding a fallback, or raising MSRV.",
+    "expected": {
+      "minResponseChars": 620,
+      "mustMention": ["MSRV", "downstream"],
+      "mustMentionAny": [
+        ["stabilized", "stable", "new std API"],
+        ["fallback", "cfg"],
+        ["semver", "release notes", "changelog", "versioning", "breaking change", "document the change"]
+      ]
+    },
+    "tags": ["answer", "api-evolution", "msrv", "semver", "rust-eval", "quick"]
+  },
+  {
+    "id": "api-evolution-deprecated-crate-method",
+    "category": "api-evolution",
+    "difficulty": "hard",
+    "prompt": "A Rust dependency deprecates a parsing method and replaces it with a fallible builder that has slightly different error behavior. Explain a migration plan that preserves behavior and test coverage.",
+    "expected": {
+      "minResponseChars": 620,
+      "mustMention": ["deprecated", "fallible", "behavior"],
+      "mustMentionAny": [["tests", "regression"], ["compatibility", "semver"]]
+    },
+    "tags": ["answer", "api-evolution", "error-handling", "testing", "rust-eval"]
+  },
+  {
+    "id": "api-evolution-behavior-change",
+    "category": "api-evolution",
+    "difficulty": "expert",
+    "prompt": "A Rust crate upgrade keeps the same function signature but changes how invalid UTF-8 and empty input are handled. Explain why signature checks are insufficient and how to validate the migration.",
+    "expected": {
+      "minResponseChars": 650,
+      "mustMention": ["signature", "behavior", "migration"],
+      "mustMentionAny": [["regression", "golden"], ["invalid UTF-8", "edge case"]]
+    },
+    "tags": ["answer", "api-evolution", "testing", "edge-cases", "rust-eval"]
+  },
+  {
+    "id": "repo-feature-resolver-workspace",
+    "category": "repository-issue",
+    "difficulty": "hard",
+    "prompt": "A Rust workspace has one crate that needs serde derive and another no_std crate where default features accidentally pull in std. Diagnose the Cargo feature problem and propose a workspace-safe fix.",
+    "expected": {
+      "minResponseChars": 650,
+      "mustMention": ["workspace", "features", "no_std"],
+      "mustMentionAny": [["default-features", "resolver"], ["serde", "derive"]]
+    },
+    "tags": ["answer", "repository-issue", "cargo", "no-std", "rust-eval"]
+  },
+  {
+    "id": "repo-orphan-rule-newtype",
+    "category": "repository-issue",
+    "difficulty": "hard",
+    "prompt": "A Rust project tries to implement Display for Vec<ExternalType> and hits the orphan rule. Explain the coherence issue and design a newtype-based API that remains ergonomic.",
+    "expected": {
+      "minResponseChars": 600,
+      "mustMention": ["orphan", "coherence", "newtype"],
+      "mustMentionAny": [["Display", "From"], ["Deref", "AsRef", "wrapper"]]
+    },
+    "tags": ["answer", "repository-issue", "traits", "api-design", "rust-eval"]
+  },
+  {
+    "id": "repo-test-reproduction-first",
+    "category": "repository-issue",
+    "difficulty": "hard",
+    "prompt": "A Rust bug report says a parser accepts malformed input only when a feature flag is enabled. Explain how an agent should reproduce the issue before patching, including Cargo commands and minimal tests.",
+    "expected": {
+      "minResponseChars": 650,
+      "mustMention": ["reproduce", "feature", "test"],
+      "mustMentionAny": [["cargo test", "cargo check"], ["minimal", "fixture"]]
+    },
+    "tags": ["answer", "repository-issue", "testing", "cargo", "rust-eval"]
+  },
+  {
+    "id": "review-unsafe-send-sync-impl",
+    "category": "review-debugging",
+    "difficulty": "expert",
+    "prompt": "Review a Rust type that manually implements unsafe impl Send and Sync for a wrapper around a raw pointer. Identify the proof obligations and safer alternatives.",
+    "expected": {
+      "minResponseChars": 650,
+      "mustMention": ["unsafe impl", "Send", "Sync"],
+      "mustMentionAny": [["aliasing", "thread safety", "data race"], ["SAFETY", "invariant"]]
+    },
+    "tags": ["review", "unsafe", "concurrency", "memory-safety", "rust-eval"]
+  },
+  {
+    "id": "review-pin-self-referential",
+    "category": "review-debugging",
+    "difficulty": "expert",
+    "prompt": "Review a Rust async type that stores a pointer to one of its own fields and then moves the struct after polling. Explain the Pin/self-referential risk and a safer design.",
+    "expected": {
+      "minResponseChars": 650,
+      "mustMention": ["Pin", "self-referential", "move"],
+      "mustMentionAny": [["projection", "pin-project"], ["unsafe", "invariant"]]
+    },
+    "tags": ["review", "async", "unsafe", "memory-safety", "rust-eval"]
+  },
+  {
+    "id": "review-miri-ub-triage",
+    "category": "review-debugging",
+    "difficulty": "expert",
+    "prompt": "A Rust test passes normally but fails under Miri with undefined behavior around pointer aliasing. Explain how to triage the report and what code patterns to inspect first.",
+    "expected": {
+      "minResponseChars": 620,
+      "mustMention": ["Miri", "undefined behavior", "aliasing"],
+      "mustMentionAny": [["raw pointer", "UnsafeCell"], ["stacked borrows", "provenance"]]
+    },
+    "tags": ["review", "unsafe", "testing", "memory-safety", "rust-eval"]
+  },
+  {
+    "id": "artifact-compiler-error-playbook",
+    "category": "artifact-generation",
+    "difficulty": "medium",
+    "prompt": "Create COMPILER_ERROR_PLAYBOOK.md for triaging Rust compiler errors. Cover E0382, E0502, E0277, E0308, and the rule that fixes should preserve API intent. Include the exact phrase: compiler fixes must preserve design intent.",
+    "expected": {
+      "files": ["COMPILER_ERROR_PLAYBOOK.md"],
+      "mustMentionInFiles": [
+        {
+          "path": "COMPILER_ERROR_PLAYBOOK.md",
+          "text": "compiler fixes must preserve design intent"
+        }
+      ]
+    },
+    "tags": ["artifact", "compiler-diagnostics", "ownership", "error-handling", "rust-eval"]
+  },
+  {
+    "id": "artifact-api-evolution-checklist",
+    "category": "artifact-generation",
+    "difficulty": "hard",
+    "prompt": "Create API_EVOLUTION_CHECKLIST.md for Rust dependency upgrades. Cover MSRV, stabilization, deprecation, signature changes, behavior changes, semver, and regression tests. Include the exact phrase: API evolution is a compatibility problem.",
+    "expected": {
+      "files": ["API_EVOLUTION_CHECKLIST.md"],
+      "mustMentionInFiles": [
+        {
+          "path": "API_EVOLUTION_CHECKLIST.md",
+          "text": "API evolution is a compatibility problem"
+        }
+      ]
+    },
+    "tags": ["artifact", "api-evolution", "msrv", "testing", "rust-eval"]
+  },
+  {
+    "id": "artifact-repo-issue-reproduction",
+    "category": "artifact-generation",
+    "difficulty": "hard",
+    "prompt": "Create ISSUE_REPRODUCTION.md for Rust repository-level bug fixing. Cover environment capture, cargo metadata, feature flags, minimal failing tests, and patch verification. Include the exact phrase: reproduction is the first fix.",
+    "expected": {
+      "files": ["ISSUE_REPRODUCTION.md"],
+      "mustMentionInFiles": [
+        {
+          "path": "ISSUE_REPRODUCTION.md",
+          "text": "reproduction is the first fix"
+        }
+      ]
+    },
+    "tags": ["artifact", "repository-issue", "testing", "cargo", "rust-eval"]
+  },
+  {
+    "id": "answer-test-generation-property-boundaries",
+    "category": "test-generation",
+    "difficulty": "hard",
+    "prompt": "A Rust parser has examples but no boundary tests. Explain how to design unit tests, regression tests, and property-style tests for invalid input, empty input, Unicode, and overflow cases.",
+    "expected": {
+      "minResponseChars": 620,
+      "mustMention": ["regression", "invalid", "overflow"],
+      "mustMentionAny": [["property", "proptest", "quickcheck"], ["Unicode", "empty input"]]
+    },
+    "tags": ["answer", "test-generation", "parser", "edge-cases", "rust-eval"]
+  },
+  {
+    "id": "answer-loom-concurrency-model",
+    "category": "test-generation",
+    "difficulty": "expert",
+    "prompt": "A Rust lock-free queue passes normal tests but occasionally fails in production. Explain when model checking with loom is useful and what limitations remain.",
+    "expected": {
+      "minResponseChars": 620,
+      "mustMention": ["loom", "concurrency", "interleaving"],
+      "mustMentionAny": [["model checking", "schedule"], ["atomic", "ordering"]]
+    },
+    "tags": ["answer", "test-generation", "concurrency", "performance", "rust-eval"]
+  },
+  {
+    "id": "answer-cargo-clippy-quality-gates",
+    "category": "quality-gates",
+    "difficulty": "medium",
+    "prompt": "A Rust library wants CI gates that catch formatting drift, clippy regressions, feature combinations, docs, and unsafe review gaps. Propose a practical command sequence and failure policy.",
+    "expected": {
+      "minResponseChars": 560,
+      "mustMention": ["cargo fmt", "clippy", "docs"],
+      "mustMentionAny": [["all-features", "no-default-features"], ["unsafe", "SAFETY"]]
+    },
+    "tags": ["answer", "quality-gates", "cargo", "unsafe", "rust-eval"]
+  },
+  {
+    "id": "answer-performance-criterion-noise",
+    "category": "performance-eval",
+    "difficulty": "hard",
+    "prompt": "A Rust optimization benchmark shows a 5% speedup on one laptop but slower results in CI. Explain how to evaluate the change without overfitting to noisy microbenchmarks.",
+    "expected": {
+      "minResponseChars": 600,
+      "mustMention": ["benchmark", "noise", "CI"],
+      "mustMentionAny": [["criterion", "statistical"], ["profiling", "macrobenchmark"]]
+    },
+    "tags": ["answer", "performance-eval", "benchmarking", "quality-gates", "rust-eval"]
+  },
+  {
+    "id": "answer-proc-macro-diagnostics",
+    "category": "tooling-diagnostics",
+    "difficulty": "hard",
+    "prompt": "A Rust derive macro emits confusing errors at the call site and panics on malformed input. Explain how to improve proc-macro diagnostics and tests.",
+    "expected": {
+      "minResponseChars": 600,
+      "mustMention": ["proc-macro", "diagnostic", "panic"],
+      "mustMentionAny": [["span", "syn::Error"], ["trybuild", "compile-fail"]]
+    },
+    "tags": ["answer", "tooling-diagnostics", "macros", "testing", "rust-eval"]
+  },
+  {
+    "id": "answer-rustdoc-public-contract",
+    "category": "quality-gates",
+    "difficulty": "medium",
+    "prompt": "A Rust crate has public APIs with examples in rustdoc that no longer compile after a refactor. Explain how doctests fit into release quality and what should be documented.",
+    "expected": {
+      "minResponseChars": 520,
+      "mustMention": ["rustdoc", "doctest", "public API"],
+      "mustMentionAny": [["cargo test", "documentation"], ["examples", "compile"]]
+    },
+    "tags": ["answer", "quality-gates", "documentation", "testing", "rust-eval"]
+  }
+]

@@ -41,6 +41,7 @@ failure reasons.
 |-------|------|---------|
 | Comprehensive | `fixtures/agent-matrix-comprehensive.json` | Original broad real-Agent matrix across answer, artifact, review, and code generation surfaces. |
 | Expanded Rust Skills | `fixtures/prompt-suites/rust-skills-expanded.json` | Harder and wider product-neutral prompts for ownership, async, unsafe, FFI, embedded/no-std, review-debugging, and operational artifacts. |
+| Public-Eval-Inspired Rust | `fixtures/prompt-suites/rust-public-eval-inspired.json` | Rust-specific dimensions inspired by public benchmark work: compiler diagnostics, API evolution, repository issue reproduction, test generation, unsafe review, performance eval, and tooling diagnostics. |
 
 ## Metrics
 

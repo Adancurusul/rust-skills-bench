@@ -2,7 +2,8 @@
   "subjectRoot": "../rust-skills",
   "cases": [
     "fixtures/agent-matrix-comprehensive.json",
-    "fixtures/prompt-suites/rust-skills-expanded.json"
+    "fixtures/prompt-suites/rust-skills-expanded.json",
+    "fixtures/prompt-suites/rust-public-eval-inspired.json"
   ],
   "resultsDir": "results",
   "engines": ["codex", "claude-code"],

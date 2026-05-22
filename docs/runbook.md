@@ -58,6 +58,24 @@ npm run agents:codegen
 Code-generation cases copy fixtures from the subject repository, run agents in
 isolated workspaces, and execute verification commands such as `cargo test`.
 
+## Rust Public-Eval-Inspired Runs
+
+Run the fastest real smoke for the Rust-specific public-eval-inspired suite:
+
+```bash
+npm run agents:rust-evals-smoke
+```
+
+Run the compiler diagnostics slice:
+
+```bash
+npm run agents:rust-diagnostics
+```
+
+These runs are prompt-original but dimensionally inspired by Rust API evolution,
+compiler-error repair, repository-level issue resolution, and harder polyglot
+coding benchmarks. Do not copy public benchmark tasks verbatim into this suite.
+
 ## Full Local Matrix
 
 ```bash

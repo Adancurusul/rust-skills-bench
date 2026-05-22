@@ -88,6 +88,13 @@ Run real code-generation comparison:
 npm run agents:codegen
 ```
 
+Run Rust public-eval-inspired slices:
+
+```bash
+npm run agents:rust-evals-smoke
+npm run agents:rust-diagnostics
+```
+
 Run the full local matrix across all bundled prompt suites:
 
 ```bash

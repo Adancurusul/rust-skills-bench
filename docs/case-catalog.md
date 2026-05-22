@@ -1,46 +1,61 @@
 # Case Catalog
 
-Source: `fixtures/agent-matrix-comprehensive.json`, `fixtures/prompt-suites/rust-skills-expanded.json`
+Source: `fixtures/agent-matrix-comprehensive.json`, `fixtures/prompt-suites/rust-skills-expanded.json`, `fixtures/prompt-suites/rust-public-eval-inspired.json`
 
 ## Summary
 
-- Total cases: 42
-- Categories: answer-quality=23, artifact-generation=7, review-debugging=7, code-generation=5
-- Difficulties: medium=16, hard=19, expert=7
+- Total cases: 66
+- Categories: answer-quality=23, artifact-generation=10, review-debugging=10, code-generation=5, compiler-diagnostics=6, api-evolution=3, repository-issue=3, test-generation=2, quality-gates=2, performance-eval=1, tooling-diagnostics=1
+- Difficulties: medium=24, hard=30, expert=12
 
 ## Tags
 
 | Tag | Count |
 |-----|-------|
-| answer | 23 |
-| unsafe | 12 |
-| api-design | 11 |
-| concurrency | 11 |
-| review | 11 |
-| error-handling | 10 |
-| async | 8 |
-| artifact | 7 |
+| answer | 41 |
+| rust-eval | 24 |
+| unsafe | 16 |
+| api-design | 14 |
+| concurrency | 14 |
+| error-handling | 14 |
+| review | 14 |
+| async | 11 |
+| artifact | 10 |
+| ownership | 10 |
+| testing | 8 |
+| compiler-diagnostics | 7 |
 | debugging | 7 |
 | ffi | 6 |
-| ownership | 6 |
+| performance | 6 |
 | codegen | 5 |
-| performance | 5 |
+| memory-safety | 5 |
+| no-std | 5 |
+| api-evolution | 4 |
+| borrowing | 4 |
+| cargo | 4 |
 | embedded | 4 |
-| no-std | 4 |
+| parser | 4 |
+| repository-issue | 4 |
 | web | 4 |
-| borrowing | 3 |
 | cli | 3 |
+| lifetime | 3 |
 | operations | 3 |
-| parser | 3 |
+| quality-gates | 3 |
 | resource-management | 3 |
-| lifetime | 2 |
-| memory-safety | 2 |
+| traits | 3 |
+| benchmarking | 2 |
+| edge-cases | 2 |
+| msrv | 2 |
+| quick | 2 |
 | service-design | 2 |
-| traits | 2 |
-| benchmarking | 1 |
+| test-generation | 2 |
+| documentation | 1 |
 | domain-model | 1 |
 | iterator | 1 |
-| quick | 1 |
+| macros | 1 |
+| performance-eval | 1 |
+| semver | 1 |
+| tooling-diagnostics | 1 |
 | type-state | 1 |
 
 ## answer-quality
@@ -82,6 +97,9 @@ Source: `fixtures/agent-matrix-comprehensive.json`, `fixtures/prompt-suites/rust
 | artifact-release-quality-gates | medium | artifact, review, unsafe, error-handling | text/file expectations |
 | artifact-async-shutdown-runbook | hard | artifact, async, concurrency, operations | text/file expectations |
 | artifact-ffi-safety-template | hard | artifact, unsafe, ffi, review | text/file expectations |
+| artifact-compiler-error-playbook | medium | artifact, compiler-diagnostics, ownership, error-handling, rust-eval | text/file expectations |
+| artifact-api-evolution-checklist | hard | artifact, api-evolution, msrv, testing, rust-eval | text/file expectations |
+| artifact-repo-issue-reproduction | hard | artifact, repository-issue, testing, cargo, rust-eval | text/file expectations |
 
 ## review-debugging
 
@@ -94,6 +112,9 @@ Source: `fixtures/agent-matrix-comprehensive.json`, `fixtures/prompt-suites/rust
 | review-debug-static-mut-cache | expert | review, unsafe, concurrency, debugging | text/file expectations |
 | review-debug-transmute-endian-expanded | expert | review, unsafe, parser, performance, debugging | text/file expectations |
 | review-debug-unwrap-library | medium | review, error-handling, api-design, debugging | text/file expectations |
+| review-unsafe-send-sync-impl | expert | review, unsafe, concurrency, memory-safety, rust-eval | text/file expectations |
+| review-pin-self-referential | expert | review, async, unsafe, memory-safety, rust-eval | text/file expectations |
+| review-miri-ub-triage | expert | review, unsafe, testing, memory-safety, rust-eval | text/file expectations |
 
 ## code-generation
 
@@ -104,3 +125,56 @@ Source: `fixtures/agent-matrix-comprehensive.json`, `fixtures/prompt-suites/rust
 | codegen-cli-args | medium | codegen, cli, error-handling | cargo test --quiet |
 | codegen-state-machine | hard | codegen, type-state, domain-model | cargo test --quiet |
 | codegen-no-std-ring-buffer | hard | codegen, embedded, no-std, resource-management | cargo test --quiet |
+
+## compiler-diagnostics
+
+| ID | Difficulty | Tags | Verification |
+|----|------------|------|--------------|
+| compiler-e0382-moved-builder | medium | answer, compiler-diagnostics, ownership, api-design, rust-eval | text/file expectations |
+| compiler-e0502-split-borrows | medium | answer, compiler-diagnostics, ownership, borrowing, rust-eval | text/file expectations |
+| compiler-e0716-temporary-drop | medium | answer, compiler-diagnostics, lifetime, ownership, rust-eval | text/file expectations |
+| compiler-e0277-send-bound-rc | hard | answer, compiler-diagnostics, async, concurrency, rust-eval | text/file expectations |
+| compiler-e0282-type-inference-channel | medium | answer, compiler-diagnostics, async, error-handling, rust-eval | text/file expectations |
+| compiler-e0308-result-error-boundary | medium | answer, compiler-diagnostics, error-handling, api-design, rust-eval | text/file expectations |
+
+## api-evolution
+
+| ID | Difficulty | Tags | Verification |
+|----|------------|------|--------------|
+| api-evolution-msrv-stabilization | hard | answer, api-evolution, msrv, semver, rust-eval, quick | text/file expectations |
+| api-evolution-deprecated-crate-method | hard | answer, api-evolution, error-handling, testing, rust-eval | text/file expectations |
+| api-evolution-behavior-change | expert | answer, api-evolution, testing, edge-cases, rust-eval | text/file expectations |
+
+## repository-issue
+
+| ID | Difficulty | Tags | Verification |
+|----|------------|------|--------------|
+| repo-feature-resolver-workspace | hard | answer, repository-issue, cargo, no-std, rust-eval | text/file expectations |
+| repo-orphan-rule-newtype | hard | answer, repository-issue, traits, api-design, rust-eval | text/file expectations |
+| repo-test-reproduction-first | hard | answer, repository-issue, testing, cargo, rust-eval | text/file expectations |
+
+## test-generation
+
+| ID | Difficulty | Tags | Verification |
+|----|------------|------|--------------|
+| answer-test-generation-property-boundaries | hard | answer, test-generation, parser, edge-cases, rust-eval | text/file expectations |
+| answer-loom-concurrency-model | expert | answer, test-generation, concurrency, performance, rust-eval | text/file expectations |
+
+## quality-gates
+
+| ID | Difficulty | Tags | Verification |
+|----|------------|------|--------------|
+| answer-cargo-clippy-quality-gates | medium | answer, quality-gates, cargo, unsafe, rust-eval | text/file expectations |
+| answer-rustdoc-public-contract | medium | answer, quality-gates, documentation, testing, rust-eval | text/file expectations |
+
+## performance-eval
+
+| ID | Difficulty | Tags | Verification |
+|----|------------|------|--------------|
+| answer-performance-criterion-noise | hard | answer, performance-eval, benchmarking, quality-gates, rust-eval | text/file expectations |
+
+## tooling-diagnostics
+
+| ID | Difficulty | Tags | Verification |
+|----|------------|------|--------------|
+| answer-proc-macro-diagnostics | hard | answer, tooling-diagnostics, macros, testing, rust-eval | text/file expectations |
