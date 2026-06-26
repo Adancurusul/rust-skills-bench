@@ -76,7 +76,8 @@
     "prompt": "A Rust CLI prints a human-readable error message but still exits with code 0 when parsing fails. Explain the user impact and the automation impact, then propose a fix.",
     "expected": {
       "minResponseChars": 450,
-      "mustMention": ["exit code", "error", "automation"]
+      "mustMention": ["error", "automation"],
+      "mustMentionAny": [["exit code", "exit status", "nonzero exit", "non-zero", "ExitCode", "process::exit", "exit 1"]]
     },
     "tags": ["answer", "cli", "error-handling", "quick"]
   },
