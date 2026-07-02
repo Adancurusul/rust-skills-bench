@@ -112,50 +112,77 @@ function buildJudgePrompt(question, response, criteria) {
   ].join("\n");
 }
 
-async function judge(question, response, criteria) {
-  const prompt = buildJudgePrompt(question, response, criteria);
+function parseJudgeOutput(raw) {
+  // Extract the LAST JSON object with a score (the pane may echo the prompt's
+  // example JSON before the real answer; take the last match to win).
+  const matches = [...String(raw).matchAll(/\{[^{}]*"score"[^{}]*\}/g)];
+  const jsonMatch = matches.length ? matches[matches.length - 1][0] : null;
+  if (!jsonMatch) {
+    return { score: null, reasoning: `judge returned unparseable output: ${String(raw).slice(-200)}`, pass: null, error: true };
+  }
+  // The TUI pane wraps long lines, injecting newlines + indentation inside the
+  // one-line JSON the model emitted. Collapse intra-JSON whitespace runs back to
+  // single spaces so JSON.parse doesn't choke on the wrap artifacts.
+  const cleaned = jsonMatch.replace(/\s*\n\s*/g, " ");
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (typeof parsed.score !== "number") {
+      return { score: null, reasoning: "judge returned JSON without numeric score", pass: null, error: true };
+    }
+    return {
+      score: parsed.score,
+      reasoning: parsed.reasoning || "",
+      pass: typeof parsed.pass === "boolean" ? parsed.pass : parsed.score >= 3,
+      error: false
+    };
+  } catch {
+    return { score: null, reasoning: `JSON parse failed: ${cleaned.slice(0, 200)}`, pass: null, error: true };
+  }
+}
+
+async function judgeViaCodex(prompt) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "llm-judge-"));
   const outputFile = path.join(tmpDir, "output.txt");
   try {
     const result = await runProcess("codex", [
-      "exec",
-      "-C", tmpDir,
-      "--skip-git-repo-check",
-      "--ephemeral",
-      "--ignore-user-config",
-      "--ignore-rules",
-      "-s", "workspace-write",
-      "-o", outputFile,
-      prompt
+      "exec", "-C", tmpDir, "--skip-git-repo-check", "--ephemeral",
+      "--ignore-user-config", "--ignore-rules", "-s", "workspace-write",
+      "-o", outputFile, prompt
     ], { timeoutMs: 90000 });
-
     if (result.code !== 0 && !fs.existsSync(outputFile)) {
       return { score: null, reasoning: `judge process failed (exit ${result.code}): ${result.stderr.slice(0, 200)}`, pass: null, error: true };
     }
-
     const raw = (fs.existsSync(outputFile) ? fs.readFileSync(outputFile, "utf8") : result.stdout).trim();
-    // Extract JSON from the response (model may wrap it in backticks or repeat it)
-    const jsonMatch = raw.match(/\{[^{}]+\}/s);
-    if (!jsonMatch) {
-      return { score: null, reasoning: `judge returned unparseable output: ${raw.slice(0, 200)}`, pass: null, error: true };
-    }
-    try {
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (typeof parsed.score !== "number") {
-        return { score: null, reasoning: "judge returned JSON without numeric score", pass: null, error: true };
-      }
-      return {
-        score: parsed.score,
-        reasoning: parsed.reasoning || "",
-        pass: typeof parsed.pass === "boolean" ? parsed.pass : parsed.score >= 3,
-        error: false
-      };
-    } catch {
-      return { score: null, reasoning: `JSON parse failed: ${raw.slice(0, 200)}`, pass: null, error: true };
-    }
+    return parseJudgeOutput(raw);
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
   }
+}
+
+// cc-tui judge: reuse the same PTY/tmux Claude Code path the bench engine uses,
+// because headless `claude -p` fails OAuth on this host (401). Shells out to
+// scripts/cc-tui-engine.sh <promptFile> <outputFile> and parses the pane dump.
+async function judgeViaCcTui(prompt) {
+  const engineScript = path.join(path.dirname(new URL(import.meta.url).pathname), "cc-tui-engine.sh");
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "llm-judge-cctui-"));
+  const promptFile = path.join(tmpDir, "prompt.txt");
+  const outputFile = path.join(tmpDir, "output.txt");
+  fs.writeFileSync(promptFile, prompt);
+  try {
+    const result = await runProcess("bash", [engineScript, promptFile, outputFile, tmpDir], { timeoutMs: 180000 });
+    if (!fs.existsSync(outputFile)) {
+      return { score: null, reasoning: `cc-tui judge produced no output (exit ${result.code}): ${(result.stderr || "").slice(0, 200)}`, pass: null, error: true };
+    }
+    const raw = fs.readFileSync(outputFile, "utf8").trim();
+    return parseJudgeOutput(raw);
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
+}
+
+async function judge(question, response, criteria, engine) {
+  const prompt = buildJudgePrompt(question, response, criteria);
+  return engine === "codex" ? judgeViaCodex(prompt) : judgeViaCcTui(prompt);
 }
 
 async function main() {
@@ -172,6 +199,13 @@ async function main() {
   const caseFilter = argValue("--case-filter", null);
   const profileFilter = argValue("--profile", null);
   const engineFilter = argValue("--engine", null);
+  // Judge engine: cc-tui (default; PTY Claude Code) or codex. Headless claude -p
+  // fails OAuth here, so cc-tui is the working default.
+  const judgeEngine = argValue("--judge-engine", "cc-tui");
+  // Dual-gate mode: only re-judge capsules the phrase gate FAILED. The judge can
+  // rescue a false-negative (right answer, wrong wording) but never downgrades a
+  // phrase-gate PASS. This is the P0-2 "judge on fail" path.
+  const onlyFailures = process.argv.includes("--only-failures");
 
   const report = readJson(reportPath);
   const caseIndex = loadCaseIndex(casePaths);
@@ -200,6 +234,13 @@ async function main() {
 
     const caseItem = caseIndex.get(capsule.caseId);
     if (!caseItem) {
+      augmented.push(capsule);
+      skipped += 1;
+      continue;
+    }
+
+    // Dual-gate: only re-judge phrase-gate failures (the false-negative suspects).
+    if (onlyFailures && capsule.hardGate === "PASS") {
       augmented.push(capsule);
       skipped += 1;
       continue;
@@ -235,8 +276,8 @@ async function main() {
       continue;
     }
 
-    process.stderr.write(`[judging] ${label}...\n`);
-    const result = await judge(caseItem.prompt, response, criteria);
+    process.stderr.write(`[judging via ${judgeEngine}] ${label}...\n`);
+    const result = await judge(caseItem.prompt, response, criteria, judgeEngine);
     const llmScore = {
       score: result.score,
       minScore,
@@ -255,6 +296,34 @@ async function main() {
   const llmPassed = augmented.filter((c) => c.llmScore?.pass === true).length;
   const llmFailed = augmented.filter((c) => c.llmScore?.pass === false).length;
   const llmTotal = llmPassed + llmFailed;
+
+  // Dual-gate: judgedGate = phrase gate PASS, OR (phrase gate FAIL rescued by a
+  // judge PASS). Judge never downgrades a phrase-gate PASS. Report raw vs judged
+  // pass rate per profile so phrase false-negatives stop distorting lift.
+  const judgedPass = (c) => c.hardGate === "PASS" || c.llmScore?.pass === true;
+  const runnable = augmented.filter((c) => c.status !== "SKIP" && c.status !== "TIMEOUT");
+  const profileNames = [...new Set(runnable.map((c) => c.profile || "baseline"))];
+  const dualGate = {};
+  for (const profile of profileNames) {
+    const rows = runnable.filter((c) => (c.profile || "baseline") === profile);
+    const rawPass = rows.filter((c) => c.hardGate === "PASS").length;
+    const jPass = rows.filter(judgedPass).length;
+    const rescued = rows.filter((c) => c.hardGate === "FAIL" && c.llmScore?.pass === true)
+      .map((c) => c.caseId);
+    dualGate[profile] = {
+      total: rows.length,
+      rawGatePassRate: rows.length ? Number((rawPass / rows.length).toFixed(4)) : null,
+      judgedPassRate: rows.length ? Number((jPass / rows.length).toFixed(4)) : null,
+      rescuedByJudge: rescued
+    };
+  }
+  if (dualGate.baseline && dualGate["rust-skills"]) {
+    dualGate.comparison = {
+      rawGatePassRateDelta: Number((dualGate["rust-skills"].rawGatePassRate - dualGate.baseline.rawGatePassRate).toFixed(4)),
+      judgedPassRateDelta: Number((dualGate["rust-skills"].judgedPassRate - dualGate.baseline.judgedPassRate).toFixed(4))
+    };
+  }
+
   const augmentedReport = {
     ...report,
     capsules: augmented,
@@ -266,7 +335,8 @@ async function main() {
       failed: llmFailed,
       total: llmTotal,
       passRate: llmTotal > 0 ? Number((llmPassed / llmTotal).toFixed(4)) : null
-    }
+    },
+    dualGateSummary: dualGate
   };
 
   const out = JSON.stringify(augmentedReport, null, 2);
